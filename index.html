@@ -47,7 +47,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -444,17 +443,6 @@
       color: rgba(255,255,255,0.75); font-size: 0.9rem; white-space: nowrap;
     }
 
-    /* ── LEAFLET CUSTOM ── */
-    .map-marker-icon { display: flex; align-items: center; justify-content: center; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
-    .map-marker-icon span { transform: rotate(45deg); font-size: 0.7rem; color: white; font-weight: 800; }
-    .leaflet-popup-content-wrapper { border-radius: 10px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important; }
-    .leaflet-popup-content { margin: 0 !important; }
-    .popup-body { padding: 14px 16px; }
-    .popup-cat { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-    .popup-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.92rem; color: #0d1b2a; margin-bottom: 4px; }
-    .popup-desc { font-size: 0.8rem; color: #4b5563; line-height: 1.45; margin-bottom: 8px; }
-    .popup-time { font-size: 0.75rem; font-weight: 600; color: #9ca3af; }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 1024px) {
       .about-grid { grid-template-columns: 1fr; gap: 48px; }
@@ -667,7 +655,16 @@
       <button class="filter-btn" data-cat="shopping"><span class="dot" style="background:#3a86ff"></span> Шопинг</button>
     </div>
 
-    <div id="map-container" class="reveal"></div>
+    <div id="map-container" class="reveal">
+      <iframe
+        src="https://yandex.ru/map-widget/v1/?ll=30.4404%2C59.9316&z=15&pt=30.4404%2C59.9316~pm2rdm&l=map"
+        width="100%" height="100%"
+        frameborder="0"
+        allowfullscreen
+        style="border:0;display:block;"
+        title="Карта — Апартаменты Авенир у Ладожской"
+      ></iframe>
+    </div>
 
     <div class="places-list" id="placesList"></div>
   </div>
@@ -751,7 +748,6 @@
   <div id="lb-counter"></div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPtE=" crossorigin=""></script>
 <script>
 // ── ALL PHOTOS ──
 const photos = [
@@ -950,50 +946,15 @@ function buildList(cat) {
 }
 buildList('all');
 
-// ── MAP — wrapped in try/catch so a Leaflet error never breaks the page ──
-try {
-  const map = L.map('map-container', { zoomControl: true, scrollWheelZoom: false }).setView([59.9316, 30.4404], 14);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19
-  }).addTo(map);
-
-  const homeIcon = L.divIcon({
-    html:`<div style="background:#00b4d8;width:40px;height:40px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,180,216,0.5);border:3px solid white"><span style="transform:rotate(45deg);font-size:1.2rem">🏠</span></div>`,
-    iconSize:[40,40], iconAnchor:[20,40], popupAnchor:[0,-44], className:''
+// ── MAP FILTER BUTTONS — filter the place cards list below the Yandex map ──
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeCat = btn.dataset.cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildList(activeCat);
   });
-  L.marker([59.9316,30.4404], {icon:homeIcon}).addTo(map)
-    .bindPopup('<div class="popup-body"><div class="popup-cat" style="color:#00b4d8">📍 АПАРТАМЕНТЫ</div><div class="popup-name">Авенир Ладожская</div><div class="popup-desc">пр. Энергетиков, 8к2 · 7 этаж</div><div class="popup-time">Вы здесь</div></div>');
-
-  const markers = [];
-  places.forEach(p => {
-    const color = catColors[p.cat];
-    const ico = L.divIcon({
-      html:`<div style="background:${color};width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.25);border:2px solid white"><span style="transform:rotate(45deg);font-size:0.75rem">${catEmoji[p.cat]}</span></div>`,
-      iconSize:[32,32], iconAnchor:[16,32], popupAnchor:[0,-36], className:''
-    });
-    const mk = L.marker([p.lat,p.lon], {icon:ico}).addTo(map)
-      .bindPopup(`<div class="popup-body"><div class="popup-cat" style="color:${color}">${catEmoji[p.cat]} ${p.cat.toUpperCase()}</div><div class="popup-name">${p.name}</div><div class="popup-desc">${p.desc}</div><div class="popup-time">🕐 ${p.time}</div></div>`);
-    markers.push({ mk, cat: p.cat });
-  });
-
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeCat = btn.dataset.cat;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      markers.forEach(({mk, cat}) => {
-        if (activeCat === 'all' || cat === activeCat) map.addLayer(mk);
-        else map.removeLayer(mk);
-      });
-      buildList(activeCat);
-    });
-  });
-} catch(e) {
-  console.warn('Map failed to load:', e);
-  document.getElementById('map-container').innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9ca3af;font-family:Inter,sans-serif;flex-direction:column;gap:12px"><span style="font-size:2rem">🗺️</span><span>Карта временно недоступна</span></div>';
-}
+});
 </script>
 </body>
 </html>
