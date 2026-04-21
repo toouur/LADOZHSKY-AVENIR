@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://toouur.github.io/LADOZHSKY-AVENIR/sitemap.xml
